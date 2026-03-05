@@ -1,54 +1,42 @@
-
 import streamlit as st
 import pandas as pd
-import numpy as np
 
-# Page configuration
-st.set_page_config(page_title="My Streamlit Website", page_icon="🌐", layout="wide")
+# Load the Excel file
+df = pd.read_excel("pending.xlsx")
 
-# Title
-st.title("🌐 My First Streamlit Website")
-st.write("Welcome to my website built with Streamlit!")
+st.title("Pending Collection Report")
 
-# Sidebar navigation
-menu = st.sidebar.selectbox(
-    "Navigation",
-    ["Home", "Data Visualization", "Contact"]
-)
+# Show raw data
+st.subheader("Raw Data")
+st.dataframe(df)
 
-# Home Page
-if menu == "Home":
-    st.header("Home Page")
-    st.write("This is a simple website created using Streamlit.")
+# Summary statistics
+st.subheader("Summary")
+st.write("Total Pending Amount:", df["TOTAL AMOUNT"].sum())
+st.write("Average Pending Amount:", df["TOTAL AMOUNT"].mean())
+st.write("Total Pending Amount by Month-Year:", df.groupby("PENDING MONTHS-YEAR")["TOTAL AMOUNT"].sum().reset_index())
 
-    name = st.text_input("Enter your name")
+st.write("Total Pending Amount by floor:", df.groupby("FLOOR")["TOTAL AMOUNT"].sum().reset_index())
 
-    if st.button("Submit"):
-        st.success(f"Hello {name}, welcome to the website!")
 
-# Data Visualization Page
-elif menu == "Data Visualization":
-    st.header("Data Visualization")
+# Pending by Room
+st.subheader("Pending Amount by Room")
+room_pending = df.groupby("ROOM NUMBER")["TOTAL AMOUNT"].sum().reset_index()
+st.bar_chart(room_pending.set_index("ROOM NUMBER"))
 
-    data = pd.DataFrame(
-        np.random.randn(50, 3),
-        columns=["A", "B", "C"]
-    )
+# Pending by Year/Month
+st.subheader("Pending by Till Month-Year")
+month_pending = df.groupby("TILL MONTH-YEAR")["TOTAL AMOUNT"].sum().reset_index()
+st.line_chart(month_pending.set_index("TILL MONTH-YEAR"))
 
-    st.line_chart(data)
-    st.bar_chart(data)
+# Concession analysis
+st.subheader("Concession vs Pending")
+concession = df.groupby("ROOM NUMBER")[["TOTAL AMOUNT","CONCESSION AMOUNT"]].sum().reset_index()
+st.bar_chart(concession.set_index("ROOM NUMBER"))
 
-# Contact Page
-elif menu == "Contact":
-    st.header("Contact Us")
-
-    with st.form("contact_form"):
-        name = st.text_input("Name")
-        email = st.text_input("Email")
-        message = st.text_area("Message")
-
-        submit = st.form_submit_button("Send")
-
-        if submit:
-            st.success("Message sent successfully!")
-
+# Monthly collection trend
+st.subheader("Monthly Collection Trend")
+monthly_cols = [col for col in df.columns if "month collection" in col.lower()]
+monthly_data = df[monthly_cols].sum().reset_index()
+monthly_data.columns = ["Month", "Collection"]
+st.line_chart(monthly_data.set_index("Month"))
